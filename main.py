@@ -74,10 +74,6 @@ def recall_like(entity_id):
 
 
 db = create_connection("testdb", "postgres", "94Q2%WRJ61", "localhost", "5432")
-# db = pg_driver.connect(
-#     database="postgres", user="postgres",
-#     password="94Q2%WRJ61", host="localhost", port="5432"
-# )
 
 cur = db.cursor()
 
@@ -150,32 +146,11 @@ test_request = "select user_id, " \
                "sum(case when likes.user_id_receive = users.user_id then 1 else 0 end) as likes_mutual " \
                "from users, likes " \
                "group by name, user_id"
-# all_rows = execute_query(db, "select user_id, count(*) from likes group by user_id", fetch_result=True)
+
 executed_request = execute_query(db, test_request, fetch_result=True)
-for row, value in enumerate(executed_request):
-    print(row, value)
+
 print("Взаимные лайки ещё не реализованы и потому отображаются неправильно")
 
-
-test_request = ["""
-                CREATE TEMP TABLE likes_counter (
-                    user_id INT,
-                    name TEXT,
-                    likes_received INT
-                );
-                """, """
-                INSERT INTO likes_counter
-                    SELECT user_id, name, sum(case when likes.user_id_receive = users.user_id then 1 else 0 end)
-                    FROM users, likes GROUP BY user_id, name
-                """, """
-                SELECT likes_received, user_id, name FROM likes_counter ORDER BY likes_received DESC LIMIT 5 
-                """, """
-                DROP TABLE likes_counter
-                """]  # НЕ РАБОТАЕТ
-# for request in test_request:
-#     execute_query(db, request)
-#     for row, value in enumerate(executed_request):
-#         print(row, value)
 
 test_request = "select user_id, " \
                "name, " \
@@ -184,7 +159,3 @@ test_request = "select user_id, " \
                "group by name, user_id " \
                "ORDER BY likes_received DESC LIMIT 5"  # ВЫВОД 5 САМЫХ ПОПУЛЯРНЫХ
 executed_request = execute_query(db, test_request, fetch_result=True)
-for row, value in enumerate(executed_request):
-    print(row, value)
-# (select count(user_id_send) from likes where user_id = user_id_send) as "likes given",
-# (select count(user_id_receive) from likes where user_id = user_id_receive) as "likes received"
