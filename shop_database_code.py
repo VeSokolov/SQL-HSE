@@ -117,12 +117,18 @@ def finish_order(order_id):
     pass
 
 
+# написание собственных запросов (в 1 строку)
+def user_sql_command():
+    sql_command = input()
+    execute_query(db, sql_command)
+
+
 database_name = "shop_db"
 create_database(database_name)
 db = create_connection(database_name, "postgres", "94Q2%WRJ61", "localhost", "5432")
 cur = db.cursor()
 
-# создаём ВСЕ таблицы --- ГОТОВО
+# создаём ВСЕ таблицы --- ГОТОВО, НАДО ПРОТЕСТИРОВАТЬ
 creating_tables = [
                 """CREATE TABLE instruments(
                     id SERIAL PRIMARY KEY,
@@ -149,7 +155,7 @@ creating_tables = [
                 );
                 """,
                 """CREATE TABLE guitar(
-                    id INT NOT NULL,
+                    id INT REFERENCES instrument(id),
                     string_num INT NOT NULL,
                     fret_num INT NOT NULL,
                     floyd_rose BIT NOT NULL,
@@ -157,13 +163,13 @@ creating_tables = [
                 );
                 """,
                 """CREATE TABLE keyboard(
-                    id INT NOT NULL,
+                    id INT REFERENCES instrument(id),
                     keynum INT NOT NULL,
                     is_synth BIT
                 );
                 """,
                 """CREATE TABLE drum(
-                    id INT NOT NULL,
+                    id INT REFERENCES instrument(id),
                     diameter INT NOT NULL
                 );
                 """,
@@ -194,7 +200,7 @@ creating_tables = [
                 );
                 """]
 
-# заполняем таблицы, которые не будут меняться по мере работы --- ГОТОВО
+# заполняем таблицы, которые не будут меняться по мере работы --- ГОТОВО, НАДО ПРОТЕСТИРОВАТЬ
 filling_static_tables = [
     """ INSERT INTO location (location_id, address)
     VALUES
@@ -235,3 +241,43 @@ filling_static_tables = [
             (2, 'Egor'),
             (3, 'Irina')
             """]
+
+# заполняем таблицы, изменяемые функциями add_instrument, create_order и finish_order --- ГОТОВО, НАДО ПРОТЕСТИРОВАТЬ
+filling_dynamic_tables = [
+    """INSERT INTO instrument (id, instr_type, material, location, status, price)
+        VALUES
+            (1, 1, 2, 1, 1, 10000),
+            (2, 1, 2, 2, 1, 15000),
+            (3, 1, 2, 2, 2, 15500),
+            (4, 1, 2, 3, 1, 23000),
+            (5, 1, 2, 1, 1, 50000),
+            (6, 2, 1, 1, 1, 6000),
+            (7, 2, 2, 2, 2, 80000),
+            (8, 2, 1, 1, 1, 11000),
+            (9, 2, 1, 3, 2, 12990),
+            (10, 3, 2, 3, 2, 8000),
+            (11, 3, 3, 1, 2, 4000),
+            (12, 3, 3, 1, 2, 4500)
+    """,
+    """INSERT INTO guitar (id, strung_num, fret_num, floyd_rose, shape)
+        VALUES
+            (1, 6, 21, 0, 1),
+            (2, 6, 21, 0, 2),
+            (3, 6, 22, 1, 1),
+            (4, 6, 21, 1, 3),
+            (5, 7, 22, 0, 2)
+    """,
+    """INSERT INTO keyboard (id, keynum, is_synth)
+        VALUES
+            (6, 52, 1),
+            (7, 108, 0),
+            (8, 64, 1),
+            (9, 64, 0)
+    """,
+    """INSERT INTO drum (id, diameter)
+            VALUES
+                (10, 32),
+                (11, 30),
+                (12, 30)
+        """
+]
