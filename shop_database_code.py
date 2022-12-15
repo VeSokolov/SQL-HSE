@@ -8,12 +8,12 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 def create_connection(db_name, db_user, db_password, db_host, db_port):
     connection = None
     try:
-        connection = pg_driver.connect(
+        connection = psycopg2.connect(
             database=db_name,
             user=db_user,
             password=db_password,
             host=db_host,
-            port=db_port,
+            port=db_port
         )
         print("Connection to PostgreSQL DB successful")
     except Error as e:
@@ -86,9 +86,9 @@ def add_instrument(instr_type, material, manufacturer, price, location, status, 
                             ({max_id}, {kwargs.diameter})"""
             execute_query(db, sql_command)
             pass
-    sql_command = f"""INSERT INTO instrument (id, instr_type, material, location, status, price)
+    sql_command = f"""INSERT INTO instrument (nstr_type, material, location, status, price)
                 VALUES
-                    ({max_id}, {instr_type[0]},
+                    ({instr_type[0]},
                     SELECT material_id FROM material WHERE material_name = {material},
                     SELECT location_id FROM location WHERE location_name = {location},
                     SELECT status_name FROM status WHERE status_name = {status},
@@ -117,22 +117,36 @@ def finish_order(order_id):
     pass
 
 
-# написание собственных запросов (в 1 строку)
+# написание собственных запросов (в 1 строку) --- НЕ ГОТОВО
 def user_sql_command():
     sql_command = input()
     execute_query(db, sql_command)
 
 
-database_name = "shop_db"
-create_database(database_name)
+# создание чистой БД
+database_name = "shopdb"
+
 db = create_connection(database_name, "postgres", "94Q2%WRJ61", "localhost", "5432")
-cur = db.cursor()
 
 # создаём ВСЕ таблицы --- ГОТОВО, НАДО ПРОТЕСТИРОВАТЬ
 creating_tables = [
+                """DROP TABLE IF EXISTS instruments""",
+                """DROP TABLE IF EXISTS status""",
+                """DROP TABLE IF EXISTS location""",
+                """DROP TABLE IF EXISTS material""",
+                """DROP TABLE IF EXISTS guitar""",
+                """DROP TABLE IF EXISTS keyboard""",
+                """DROP TABLE IF EXISTS drum""",
+                """DROP TABLE IF EXISTS shape""",
+                """DROP TABLE IF EXISTS manufacturer""",
+                """DROP TABLE IF EXISTS employees""",
+                """DROP TABLE IF EXISTS order_history""",
+                """DROP TABLE IF EXISTS orders_instruments""",
+
                 """CREATE TABLE instruments(
                     id SERIAL PRIMARY KEY,
                     instr_type INT NOT NULL,
+                    manufacturer INT REFERENCES manufacturer(manufacturer_id),
                     material INT REFERENCES material(material_id),
                     location INT REFERENCES location(location_id),
                     status INT REFERENCES status(status_id),
@@ -183,9 +197,9 @@ creating_tables = [
                     manufacturer_name VARCHAR NOT NULL
                 );
                 """,
-                """CREATE TABLE instrument_manufacturer(
-                    instrument_id INT REFERENCES instrument(id),
-                    manufacturer_id INT REFERENCES manufacturer(manufacturer_id)
+                """CREATE TABLE orders_instruments(
+                    order_id INT REFERENCES order_history(order_id),
+                    instrument_id INT REFERENCES instrument(id)
                 );""",
                 """CREATE TABLE order_history(
                     order_id INT NOT NULL,
@@ -199,6 +213,7 @@ creating_tables = [
                     employee_name TEXT NOT NULL,
                 );
                 """]
+execute_queries(db, creating_tables)
 
 # заполняем таблицы, которые не будут меняться по мере работы --- ГОТОВО, НАДО ПРОТЕСТИРОВАТЬ
 filling_static_tables = [
@@ -241,23 +256,24 @@ filling_static_tables = [
             (2, 'Egor'),
             (3, 'Irina')
             """]
+execute_queries(db, filling_static_tables)
 
 # заполняем таблицы, изменяемые функциями add_instrument, create_order и finish_order --- ГОТОВО, НАДО ПРОТЕСТИРОВАТЬ
 filling_dynamic_tables = [
-    """INSERT INTO instrument (id, instr_type, material, location, status, price)
+    """INSERT INTO instruments (instr_type, manufacturer, material, location, status, price)
         VALUES
             (1, 1, 2, 1, 1, 10000),
-            (2, 1, 2, 2, 1, 15000),
-            (3, 1, 2, 2, 2, 15500),
-            (4, 1, 2, 3, 1, 23000),
-            (5, 1, 2, 1, 1, 50000),
-            (6, 2, 1, 1, 1, 6000),
-            (7, 2, 2, 2, 2, 80000),
-            (8, 2, 1, 1, 1, 11000),
-            (9, 2, 1, 3, 2, 12990),
-            (10, 3, 2, 3, 2, 8000),
-            (11, 3, 3, 1, 2, 4000),
-            (12, 3, 3, 1, 2, 4500)
+            (1, 2, 2, 2, 1, 15000),
+            (1, 2, 2, 2, 2, 15500),
+            (1, 2, 2, 3, 1, 23000),
+            (1, 1, 2, 1, 1, 50000),
+            (2, 3, 1, 1, 1, 6000),
+            (2, 3, 2, 2, 2, 80000),
+            (2, 3, 1, 1, 1, 11000),
+            (2, 2, 1, 3, 2, 12990),
+            (3, 4, 2, 3, 2, 8000),
+            (3, 4, 3, 1, 2, 4000),
+            (3, 4, 3, 1, 2, 4500)
     """,
     """INSERT INTO guitar (id, strung_num, fret_num, floyd_rose, shape)
         VALUES
@@ -279,5 +295,5 @@ filling_dynamic_tables = [
                 (10, 32),
                 (11, 30),
                 (12, 30)
-        """
-]
+        """]
+execute_queries(db, filling_dynamic_tables)
